@@ -7,4 +7,4 @@ resources:
 - pipeline.yaml
 - rbac.yaml
 - triggerbinding.yaml
-- riggertemplate.yaml
+- triggertemplate.yaml
