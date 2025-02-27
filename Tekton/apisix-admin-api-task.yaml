@@ -1,0 +1,95 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: create-apisix-route
+spec:
+  params:
+  - name: apisix_url
+    type: string
+  - name: apisix_admin_api_key
+    type: string
+  - name: upstream-id
+    type: string
+    default: "1"
+  - name: apisix_upstream_name
+    type: string
+    default: "featureflag-upstream"
+  - name: service-id
+    type: string
+    default: "1"
+  - name: apisix_service_name
+    type: string
+    default: "featureflag-service"
+  - name: route-id
+    type: string
+    default: "100"
+  - name: apisix_route_name
+    type: string
+    default: "featureflag-route"
+  - name: apisix_route_host
+    type: string
+    default: "example.featureflag.com"
+  - name: backend_svc_name
+    type: string
+    default: "198.18.0.1"
+  - name: backend_svc_port
+    type: string
+    default: "80"
+  steps:
+    - name: create-upstream
+      image: curlimages/curl:latest
+      script: |
+        #!/bin/sh
+        set -eux
+
+        # Upstream oluştur
+        curl -i -X PUT \
+          -H "X-API-KEY: $(params.apisix_admin_api_key)" \
+          -H "Content-Type: application/json" \
+          "$(params.apisix_url)/apisix/admin/upstreams/$(params.upstream-id)" \
+          -d '{
+            "name": "$(params.apisix_upstream_name)",
+            "type": "roundrobin",
+            "nodes": {
+              "$(params.backend_svc_name):$(params.backend_svc_port)": 1
+            }
+          }'
+
+    - name: create-service
+      image: curlimages/curl:latest
+      script: |
+        #!/bin/sh
+        set -eux
+
+        # Service oluştur
+        curl -i -X PUT \
+          -H "X-API-KEY: $(params.apisix_admin_api_key)" \
+          -H "Content-Type: application/json" \
+          "$(params.apisix_url)/apisix/admin/services/$(params.service-id)" \
+          -d '{
+            "name": "$(params.apisix_service_name)",
+            "upstream_id": "$(params.upstream-id)"
+          }'
+
+    - name: create-route
+      image: curlimages/curl:latest
+      script: |
+        #!/bin/sh
+        set -eux
+
+        # Route oluştur
+        curl -i -X PUT \
+          -H "X-API-KEY: $(params.apisix_admin_api_key)" \
+          -H "Content-Type: application/json" \
+          "$(params.apisix_url)/apisix/admin/routes/$(params.route-id)" \
+          -d '{
+            "name": "$(params.apisix_route_name)",
+            "uri": "/*",
+            "hosts": ["$(params.apisix_route_host)"],
+            "upstream": {
+              "type": "roundrobin",
+              "nodes": {
+                "$(params.backend_svc_name):$(params.backend_svc_port)": 1
+              }
+            }
+          }'
