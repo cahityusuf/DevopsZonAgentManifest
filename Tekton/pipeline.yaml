@@ -1,0 +1,193 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: clone-build-push
+spec:
+  description: | 
+    This pipeline clones a git repo, then echoes the README file to the stout.
+  params:
+  - name: repo_url
+    type: string
+    description: The git repo URL to clone from.
+  - name: dockerfile_path
+    type: string
+  - name: dockerfile_context
+    type: string
+  - name: image_tag
+    type: string
+  - name: image_name
+    type: string
+  - name: manifest_repo
+    type: string
+  - name: manifest_path
+    type: string
+  - name: application_name
+    type: string
+  - name: apisix_url
+    type: string      
+  - name: apisix_admin_api_key
+    type: string
+  - name: apisix_upstream_name
+    type: string
+  - name: apisix_service_name
+    type: string
+  - name: apisix_route_name
+    type: string
+  - name: apisix_route_host
+    type: string
+  - name: backend_svc_name
+    type: string
+  - name: backend_svc_port
+    type: string
+  - name: git_username
+    type: string
+  - name: git_email
+    type: string
+  - name: branch_name
+    type: string
+  workspaces:
+  - name: shared-data
+    description: | 
+      This workspace contains the cloned repo files, so they can be read by the
+      next task.
+  - name: docker-credentials
+    description: My docker credentials
+  - name: basic-auth
+    description: Basic auth credentials for Git
+  tasks:
+  - name: fetch-source
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: shared-data
+    - name: basic-auth
+      workspace: basic-auth
+    params:
+    - name: url
+      value: $(params.repo_url)
+    - name: revision
+      value: $(params.branch_name)
+  - name: build-push
+    runAfter: ["fetch-source"]
+    taskRef:
+      name: kaniko
+    workspaces:
+    - name: source
+      workspace: shared-data
+    - name: dockerconfig
+      workspace: docker-credentials
+    params:
+    - name: IMAGE
+      value: $(params.image_name):$(params.image_tag)
+    - name: DOCKERFILE
+      value: $(params.dockerfile_path)
+    - name: CONTEXT
+      value: $(params.dockerfile_context)
+  - name: fetch-manifest
+    taskRef:
+      name: git-cli
+    runAfter:
+      - build-push
+    workspaces:
+      - name: source
+        workspace: shared-data
+      - name: basic-auth
+        workspace: basic-auth
+    params:
+      - name: manifest_repo
+        value: $(params.manifest_repo)
+      - name: BASE_IMAGE
+        value: "alpine/git:v2.32.0"
+      - name: GIT_USER_NAME
+        value: $(params.git_username)
+      - name: GIT_USER_EMAIL
+        value: $(params.git_email)
+      - name: GIT_SCRIPT
+        value: |
+          #!/bin/bash
+          git clone $(params.manifest_repo)
+  - name: set-image-tag
+    taskRef:
+      name: kustomize-set-image-tag
+    runAfter:
+      - fetch-manifest
+    workspaces:
+      - name: source
+        workspace: shared-data
+    params:
+      - name: image
+        value: $(params.image_name)
+      - name: context
+        value: $(params.manifest_path)/$(params.application_name)/base
+      - name: tag
+        value: $(params.image_tag)
+  - name: commit-push
+    taskRef:
+      name: git-cli
+    runAfter:
+      - set-image-tag
+    workspaces:
+      - name: source
+        workspace: shared-data
+      - name: basic-auth
+        workspace: basic-auth
+    params:
+      - name: image_tag
+        value: $(params.image_tag)
+      - name: manifest_repo
+        value: $(params.manifest_repo)
+      - name: manifest_path
+        value: $(params.manifest_path)
+      - name: application_name
+        value: $(params.application_name)
+      - name: BASE_IMAGE
+        value: "alpine/git:v2.32.0"
+      - name: GIT_USER_NAME
+        value: $(params.git_username)
+      - name: GIT_USER_EMAIL
+        value: $(params.git_email)
+      - name: GIT_SCRIPT
+        value: |
+          #!/bin/bash
+          pwd
+          ls
+          cat $(params.manifest_path)/$(params.application_name)/kustomization.yaml
+          cd devopszonmanifest
+          git status
+          git checkout main
+          git add .
+          git commit -m "build-bot: Update staging image tag to $(params.image_tag)"
+          git push $(params.manifest_repo) main
+  - name: sync-argocd-app
+    runAfter: ["commit-push"]
+    taskRef:
+      name: argocd-task-sync-and-wait
+    params:
+      - name: application-name
+        value: $(params.application_name)
+      - name: flags
+        value: --insecure
+      - name: argocd-version
+        value: v2.1.7
+  - name: create-apisix-route
+    runAfter: ["sync-argocd-app"]
+    taskRef:
+      name: create-apisix-route
+    params:
+    - name: apisix_url
+      value: "http://$(params.apisix_url)"
+    - name: apisix_admin_api_key
+      value: $(params.apisix_admin_api_key)
+    - name: apisix_upstream_name
+      value: $(params.apisix_upstream_name)
+    - name: apisix_service_name
+      value: $(params.apisix_service_name)
+    - name: apisix_route_name
+      value: $(params.apisix_route_name)
+    - name: apisix_route_host
+      value: "$(params.apisix_route_host)"
+    - name: backend_svc_name
+      value: $(params.backend_svc_name)
+    - name: backend_svc_port
+      value: $(params.backend_svc_port)

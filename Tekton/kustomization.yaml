@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- apisix-admin-api-task.yaml
+- eventlistener.yaml
+- kustomize-set-image-tag.yaml
+- pipeline.yaml
+- rbac.yaml
+- triggerbinding.yaml
+- riggertemplate.yaml

@@ -1,0 +1,44 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: binding
+spec: 
+  params:
+    - name: image_tag
+      value: $(body.data.image_tag)
+    - name: repo_url
+      value: $(body.data.repo_url)
+    - name: image_name
+      value: $(body.data.image_name)
+    - name: dockerfile_path
+      value: $(body.data.dockerfile_path)
+    - name: dockerfile_context
+      value: $(body.data.dockerfile_context)
+    - name: application_name
+      value: $(body.data.application_name)
+    - name: manifest_repo
+      value: $(body.data.manifest_repo)
+    - name: manifest_path
+      value: $(body.data.manifest_path)
+    - name: git_email
+      value: $(body.data.git_email)
+    - name: git_username
+      value: $(body.data.git_username)
+    - name: branch_name
+      value: $(body.data.branch_name)
+    - name: apisix_url
+      value: $(body.data.apisix.url)
+    - name: apisix_admin_api_key
+      value: $(body.data.apisix.admin_api_key)
+    - name: apisix_upstream_name
+      value: $(body.data.apisix.upstream_name)
+    - name: apisix_service_name
+      value: $(body.data.apisix.service_name)
+    - name: apisix_route_name
+      value: $(body.data.apisix.route_name)
+    - name: apisix_route_host
+      value: $(body.data.apisix.route_host)
+    - name: backend_svc_name
+      value: $(body.data.apisix.backend_svc_name)
+    - name: backend_svc_port
+      value: $(body.data.apisix.backend_svc_port)

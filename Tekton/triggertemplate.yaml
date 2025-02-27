@@ -1,0 +1,124 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: template
+spec:
+  params:
+  - name: image_tag
+    default: "v1"
+  - name: application_name
+    default: "v1"
+    description: "ArgoCd Application Name"
+  - name: repo_url
+    default: "url"
+  - name: image_name
+    default: "image_name"
+  - name: dockerfile_path
+    default: "dockerfile_path"
+    description: "s"
+  - name: dockerfile_context
+    default: "dockerfile_context"
+  - name: manifest_repo
+    default: "manifest_repo"
+    description: "manifest_repo"
+  - name: manifest_path
+    default: "manifest_path"
+    description: "manifest_path"
+  - name: git_username
+    default: "example"
+    description: "exaple"
+  - name: git_email
+    default: "example@gmail.com"
+    description: "example@gmail.com"
+  - name: branch_name
+    default: "main"
+    description: "main"
+  - name: apisix_url
+    default: "apisix_url"
+    description: "apisix_url"
+  - name: apisix_admin_api_key
+    default: "apisix_admin_api_key"
+    description: "apisix_admin_api_key"
+  - name: apisix_upstream_name
+    default: "apisix_upstream_name"
+    description: "apisix_upstream_name"
+  - name: apisix_service_name
+    default: "apisix_service_name"
+    description: "apisix_service_name"
+  - name: apisix_route_name
+    default: "apisix_route_name"
+    description: "apisix_route_name"
+  - name: apisix_route_host
+    default: "apisix_route_host"
+    description: "apisix_route_host"
+  - name: backend_svc_name
+    default: "backend_svc_name"
+    description: "backend_svc_name"
+  - name: backend_svc_port
+    default: "backend_svc_port"
+    description: "backend_svc_port"
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: trigger-  # generateName kullanılıyor
+    spec:
+      pipelineRef:
+        name: clone-build-push
+      podTemplate:
+        securityContext:
+          fsGroup: 65532
+      workspaces:
+      - name: shared-data
+        volumeClaimTemplate:
+          spec:
+            accessModes:
+            - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi
+      - name: basic-auth
+        secret:
+          secretName: basic-auth-secret
+      - name: docker-credentials
+        secret:
+          secretName: docker-credentials
+      params:
+      - name: image_tag
+        value: $(tt.params.image_tag)
+      - name: repo_url
+        value: $(tt.params.repo_url)
+      - name: image_name
+        value: $(tt.params.image_name)
+      - name: dockerfile_path
+        value: $(tt.params.dockerfile_path)
+      - name: dockerfile_context
+        value: $(tt.params.dockerfile_context)
+      - name: application_name
+        value: $(tt.params.application_name)
+      - name: manifest_repo
+        value: $(tt.params.manifest_repo)
+      - name: manifest_path
+        value: $(tt.params.manifest_path)
+      - name: git_username
+        value: $(tt.params.git_username)
+      - name: git_email
+        value: $(tt.params.git_email)
+      - name: branch_name
+        value: $(tt.params.branch_name)
+      - name: apisix_url
+        value: $(tt.params.apisix_url)
+      - name: apisix_admin_api_key
+        value: $(tt.params.apisix_admin_api_key)
+      - name: apisix_upstream_name
+        value: $(tt.params.apisix_upstream_name)
+      - name: apisix_service_name
+        value: $(tt.params.apisix_service_name)
+      - name: apisix_route_name
+        value: $(tt.params.apisix_route_name)
+      - name: apisix_route_host
+        value: $(tt.params.apisix_route_host)
+      - name: backend_svc_name
+        value: $(tt.params.backend_svc_name)
+      - name: backend_svc_port
+        value: $(tt.params.backend_svc_port)

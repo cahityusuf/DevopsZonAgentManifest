@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kustomize-set-image-tag
+spec:
+  params:
+  - name: context
+    description: context relative to the workspace where kustomize should run
+    default: ./
+  - name: image
+    description: name of the image whose tag you want to bump
+  - name: tag
+    description: tag to set the image to
+  workspaces:
+  - name: source
+  steps:
+    - name: set-image-tag
+      image: line/kubectl-kustomize:latest
+      workingDir: "$(workspaces.source.path)/$(params.context)"
+      script: |
+        kustomize edit set image "$(params.image)=$(params.image):$(params.tag)"
+        # For debugging
+        cat kustomization.yaml
