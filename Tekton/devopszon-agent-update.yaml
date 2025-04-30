@@ -1,0 +1,140 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: devopszon-agent-update
+spec:
+  description: |
+    This task calls the DevopszonAgent API endpoint to update Kubernetes manifests.
+  params:
+    - name: namespace
+      type: string
+      description: Kubernetes namespace
+    - name: deployment_name
+      type: string
+      description: Deployment name
+    - name: deployment_label
+      type: string
+      description: Deployment label selector
+    - name: image_name
+      type: string
+      description: Container image name
+    - name: image_tag
+      type: string
+      description: Container image tag
+    - name: image_registry
+      type: string
+      description: Container registry address
+      default: ""
+    - name: image_path
+      type: string
+      description: Container image path
+      default: ""
+    - name: container_port
+      type: string
+      description: Container port
+      default: "80"
+    - name: resources_request_memory
+      type: string
+      description: Memory request value
+      default: "256Mi"
+    - name: resources_request_cpu
+      type: string
+      description: CPU request value
+      default: "100m"
+    - name: resources_limit_memory
+      type: string
+      description: Memory limit value
+      default: "512Mi"
+    - name: resources_limit_cpu
+      type: string
+      description: CPU limit value
+      default: "500m"
+    - name: min_replicas
+      type: string
+      description: Minimum replicas
+      default: "1"
+    - name: max_replicas
+      type: string
+      description: Maximum replicas
+      default: "5"
+    - name: cpu_average_utilization
+      type: string
+      description: CPU average utilization
+      default: "70"
+    - name: memory_average_utilization
+      type: string
+      description: Memory average utilization
+      default: "70"
+    - name: vault_token
+      type: string
+      description: Vault token
+      default: ""
+    - name: application_name
+      type: string
+      description: Application name
+    - name: manifest_repo
+      type: string
+      description: Manifest repository URL
+    - name: manifest_path
+      type: string
+      description: Path to manifests in repository
+    - name: devopszon_agent_url
+      type: string
+      description: DevopszonAgent service URL
+      default: "http://devopszon-agent-service.devopszon.svc/api/manifest/update-image"
+    - name: configuration_items_json
+      type: string
+      description: JSON string containing configuration items
+      default: "[]"
+  steps:
+    - name: update-image
+      image: curlimages/curl:7.83.1
+      script: |
+        #!/bin/sh
+        set -e
+        
+        # Create JSON payload for the API call
+        cat > payload.json << EOF
+        {
+          "namespace": "$(params.namespace)",
+          "deploymentName": "$(params.deployment_name)",
+          "deploymentLabel": "$(params.deployment_label)",
+          "imageName": "$(params.image_name)",
+          "imageRegistry": "$(params.image_registry)",
+          "imagePath": "$(params.image_path)",
+          "containerPort": $(params.container_port),
+          "imageTag": "$(params.image_tag)",
+          "resourcesRequestMemory": "$(params.resources_request_memory)",
+          "resourcesRequestCpu": "$(params.resources_request_cpu)",
+          "resourcesLimitMemory": "$(params.resources_limit_memory)",
+          "resourcesLimitCpu": "$(params.resources_limit_cpu)",
+          "minReplicas": $(params.min_replicas),
+          "maxReplicas": $(params.max_replicas),
+          "cpuAverageUtilization": $(params.cpu_average_utilization),
+          "memoryAverageUtilization": $(params.memory_average_utilization),
+          "configurationItems": $(params.configuration_items_json),
+          "vaultToken": "$(params.vault_token)"
+        }
+        EOF
+        
+        # Print the payload for debugging
+        echo "Sending request to DevopszonAgent API with payload:"
+        cat payload.json
+        
+        # Send the request to DevopszonAgent API
+        RESPONSE=$(curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -d @payload.json \
+          $(params.devopszon_agent_url))
+        
+        # Output the response
+        echo "Response from DevopszonAgent API:"
+        echo $RESPONSE
+        
+        # Check for successful response
+        if [ "$RESPONSE" != "true" ] && [ "$RESPONSE" != "OK" ]; then
+          echo "Error: API request failed"
+          exit 1
+        fi
+        
+        echo "Successfully updated image $(params.image_name):$(params.image_tag) for application $(params.application_name)"

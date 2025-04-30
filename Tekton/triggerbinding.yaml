@@ -26,6 +26,36 @@ spec:
       value: $(body.data.git_username)
     - name: branch_name
       value: $(body.data.branch_name)
+    - name: namespace
+      value: $(body.data.@namespace)
+    - name: deployment_name
+      value: $(body.data.deployment_name)
+    - name: deployment_label
+      value: $(body.data.deployment_label)
+    - name: image_registry
+      value: $(body.data.image_registry)
+    - name: image_path
+      value: $(body.data.image_path)
+    - name: container_port
+      value: $(body.data.container_port)
+    - name: resources_request_memory
+      value: $(body.data.resources.request_memory)
+    - name: resources_request_cpu
+      value: $(body.data.resources.request_cpu)
+    - name: resources_limit_memory
+      value: $(body.data.resources.limit_memory)
+    - name: resources_limit_cpu
+      value: $(body.data.resources.limit_cpu)
+    - name: min_replicas
+      value: $(body.data.autoscaling.min_replicas)
+    - name: max_replicas
+      value: $(body.data.autoscaling.max_replicas)
+    - name: cpu_average_utilization
+      value: $(body.data.autoscaling.cpu_average_utilization)
+    - name: memory_average_utilization
+      value: $(body.data.autoscaling.memory_average_utilization)
+    - name: vault_token
+      value: $(body.data.vault_token)
     - name: apisix_url
       value: $(body.data.apisix.url)
     - name: apisix_admin_api_key
@@ -42,3 +72,7 @@ spec:
       value: $(body.data.apisix.backend_svc_name)
     - name: backend_svc_port
       value: $(body.data.apisix.backend_svc_port)
+    - name: devopszon_agent_url
+      value: $(body.data.devopszon_agent_url)
+    - name: configuration_items_json
+      value: $(body.data.configuration_items_json)

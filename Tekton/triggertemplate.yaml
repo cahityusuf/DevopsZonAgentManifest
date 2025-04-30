@@ -4,59 +4,126 @@ metadata:
   name: template
 spec:
   params:
+  # Orijinal parametreler
   - name: image_tag
     default: "v1"
+    description: "Image tag to deploy"
   - name: application_name
     default: "v1"
     description: "ArgoCd Application Name"
   - name: repo_url
     default: "url"
+    description: "Source code repository URL"
   - name: image_name
     default: "image_name"
+    description: "Container image name"
   - name: dockerfile_path
     default: "dockerfile_path"
-    description: "s"
+    description: "Path to the Dockerfile"
   - name: dockerfile_context
     default: "dockerfile_context"
+    description: "Build context for Docker"
   - name: manifest_repo
     default: "manifest_repo"
-    description: "manifest_repo"
+    description: "Kubernetes manifests repository URL"
   - name: manifest_path
     default: "manifest_path"
-    description: "manifest_path"
+    description: "Path to kubernetes manifests in the repository"
   - name: git_username
     default: "example"
-    description: "exaple"
+    description: "Git username for commits"
   - name: git_email
     default: "example@gmail.com"
-    description: "example@gmail.com"
+    description: "Git email for commits"
   - name: branch_name
     default: "main"
-    description: "main"
+    description: "Git branch name"
+  
+  # APISIX parametreleri
   - name: apisix_url
     default: "apisix_url"
-    description: "apisix_url"
+    description: "APISIX admin URL"
   - name: apisix_admin_api_key
     default: "apisix_admin_api_key"
-    description: "apisix_admin_api_key"
+    description: "APISIX admin API key"
   - name: apisix_upstream_name
     default: "apisix_upstream_name"
-    description: "apisix_upstream_name"
+    description: "APISIX upstream name"
   - name: apisix_service_name
     default: "apisix_service_name"
-    description: "apisix_service_name"
+    description: "APISIX service name"
   - name: apisix_route_name
     default: "apisix_route_name"
-    description: "apisix_route_name"
+    description: "APISIX route name"
   - name: apisix_route_host
     default: "apisix_route_host"
-    description: "apisix_route_host"
+    description: "APISIX route host"
   - name: backend_svc_name
     default: "backend_svc_name"
-    description: "backend_svc_name"
+    description: "Backend service name"
   - name: backend_svc_port
     default: "backend_svc_port"
-    description: "backend_svc_port"
+    description: "Backend service port"
+  
+  # Yeni eklenen parametreler
+  - name: namespace
+    default: "default"
+    description: "Kubernetes namespace"
+  - name: deployment_name
+    default: ""
+    description: "Kubernetes deployment name"
+  - name: deployment_label
+    default: ""
+    description: "Kubernetes deployment label selector"
+  - name: image_registry
+    default: ""
+    description: "Container registry URL"
+  - name: image_path
+    default: ""
+    description: "Image path in registry"
+  - name: container_port
+    default: "80"
+    description: "Container port"
+  
+  # Resource parametreleri
+  - name: resources_request_memory
+    default: "256Mi"
+    description: "Memory request value"
+  - name: resources_request_cpu
+    default: "100m"
+    description: "CPU request value"
+  - name: resources_limit_memory
+    default: "512Mi"
+    description: "Memory limit value"
+  - name: resources_limit_cpu
+    default: "500m"
+    description: "CPU limit value"
+  
+  # Autoscaling parametreleri
+  - name: min_replicas
+    default: "1"
+    description: "Minimum replicas"
+  - name: max_replicas
+    default: "5"
+    description: "Maximum replicas"
+  - name: cpu_average_utilization
+    default: "70"
+    description: "CPU average utilization"
+  - name: memory_average_utilization
+    default: "70"
+    description: "Memory average utilization"
+  
+  # Diğer parametreler
+  - name: vault_token
+    default: ""
+    description: "Vault token"
+  - name: devopszon_agent_url
+    default: "http://devopszon-agent-service/api/manifest/update-image"
+    description: "DevopszonAgent service URL"
+  - name: configuration_items_json
+    default: "[]"
+    description: "JSON string for configuration items"
+    
   resourcetemplates:
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
@@ -84,6 +151,7 @@ spec:
         secret:
           secretName: docker-credentials
       params:
+      # Orijinal parametreler
       - name: image_tag
         value: $(tt.params.image_tag)
       - name: repo_url
@@ -106,6 +174,8 @@ spec:
         value: $(tt.params.git_email)
       - name: branch_name
         value: $(tt.params.branch_name)
+      
+      # APISIX parametreleri
       - name: apisix_url
         value: $(tt.params.apisix_url)
       - name: apisix_admin_api_key
@@ -122,3 +192,45 @@ spec:
         value: $(tt.params.backend_svc_name)
       - name: backend_svc_port
         value: $(tt.params.backend_svc_port)
+        
+      # Yeni eklenen parametreler
+      - name: namespace
+        value: $(tt.params.namespace)
+      - name: deployment_name
+        value: $(tt.params.deployment_name)
+      - name: deployment_label
+        value: $(tt.params.deployment_label)
+      - name: image_registry
+        value: $(tt.params.image_registry)
+      - name: image_path
+        value: $(tt.params.image_path)
+      - name: container_port
+        value: $(tt.params.container_port)
+        
+      # Resource parametreleri
+      - name: resources_request_memory
+        value: $(tt.params.resources_request_memory)
+      - name: resources_request_cpu
+        value: $(tt.params.resources_request_cpu)
+      - name: resources_limit_memory
+        value: $(tt.params.resources_limit_memory)
+      - name: resources_limit_cpu
+        value: $(tt.params.resources_limit_cpu)
+        
+      # Autoscaling parametreleri
+      - name: min_replicas
+        value: $(tt.params.min_replicas)
+      - name: max_replicas
+        value: $(tt.params.max_replicas)
+      - name: cpu_average_utilization
+        value: $(tt.params.cpu_average_utilization)
+      - name: memory_average_utilization
+        value: $(tt.params.memory_average_utilization)
+        
+      # Diğer parametreler
+      - name: vault_token
+        value: $(tt.params.vault_token)
+      - name: devopszon_agent_url
+        value: $(tt.params.devopszon_agent_url)
+      - name: configuration_items_json
+        value: $(tt.params.configuration_items_json)
